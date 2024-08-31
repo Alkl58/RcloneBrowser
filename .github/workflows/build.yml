@@ -90,23 +90,22 @@ jobs:
         
   build_freebsd:
     name: FreeBSD Build
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Development Tools and Build Rclone Browser
-        uses: vmactions/freebsd-vm@v0
+        uses: vmactions/freebsd-vm@v1
         with:
-          mem: 4096
           prepare: |
             env ASSUME_ALWAYS_YES=YES pkg update -f
             env ASSUME_ALWAYS_YES=YES pkg install -y git cmake qt5-buildtools qt5-declarative qt5-multimedia qt5-qmake
+          run: |
             cd work/RcloneBrowser/RcloneBrowser
             mkdir build
             cd build
             cmake ..
             make
-            
       - uses: actions/upload-artifact@v3
         with:
           name: freebsd
