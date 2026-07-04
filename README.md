@@ -119,19 +119,6 @@ To make life easier when using AppImages on Linux, you can use [AppImageLauncher
 
 For all released binaries file with hashes signed with my [PGP key](https://github.com/kapitainsky/RcloneBrowser/wiki/PGP-key) is provided. It allows to verify that provided binaries were created by myself (authenticity) and are unchanged (integrity). If you would like to have properly signed releases with code signing certificates please see note at the end of this section.
 
-<<<<<<< HEAD
-More and more operating systems include Rclone Browser in their offical distribution channels. You can check availibility [here](https://repology.org/project/rclone-browser/packages).
-
-ArchLinux users can install latest release from AUR repository: [rclone-browser][7].
-
-Fedora package is now available from [Fedora packages](https://apps.fedoraproject.org/packages/rclone-browser) - simply run `sudo dnf install rclone-browser`
-
-FreeBSD has its version available from [freshports](https://www.freshports.org/net/rclone-browser) website.
-
-And if you would like to run it directly on your NAS (e.g. Synology or QNAP) there is docker version provided by @romancin - https://github.com/romancin/rclonebrowser-docker
-
-=======
->>>>>>> test2
 *Note: For Windows and macOS it would be much nicer (to avoid pop ups about unknown software origin) to properly sign released packages with code signing certificates however it does not come free even for open source software. I looked at it and it seems that to get keys for both systems for the next three years would cost about $500 (3x$99 for [Apple developer account](https://developer.apple.com/support/purchase-activation/) and $200 for cheapest Comodo [code signing certificate](https://comodosslstore.com/uk/code-signing). I am not prepared to budget it as I do this only as a hobby and I am entirely happy with this software as it is. If Rclone Browser users think that properly signed software would be beneficial for them they can [chip in](https://www.paypal.me/kapitainsky) some cash for it. If I raise required amount I will get keys. If not I will give money to some charity.*
 
 Why AppImage only for Linux
@@ -225,16 +212,33 @@ Build instructions
 10. Package your binary with Qt libraries to create self contained application `/usr/local/opt/qt/bin/macdeployqt rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser" -qmldir=../src/`. Without this step binary won't work without Qt installed
 
 ### Windows
-1.  Get [Visual Studio 2019][8] - you need "Desktop development with C++" module only
-2.  Install [CMake][9]
-3.  Install latest Qt v5 (64-bit) from [Qt website][10]. You only need "Qt 5.13.2 Prebuilt Components for MSVC 2017 64-bit" (MSVC 2017 64-bit). Later steps assume you install it in c:\Qt
-4.  Get rclone-browser source code. You either need to install git and clone it or download zip file from [releases][3]
-5.  Go to source folder `cd RcloneBrowser`
-6.  From cmd create new build folder  - `mkdir build` and then `cd build`
-7.  run `cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=c:\Qt\5.13.2\msvc2017_64 .. && cmake --build . --config Release`
-8.  run `c:\Qt\5.13.2\msvc2017_64\bin\windeployqt.exe --no-translations --no-angle --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"`
-9.  build\Release folder contains now RcloneBrowser.exe binary and all other files required to run it
-10. If your system does not have required MSVC runtime you can install one from Microsoft [website](https://support.microsoft.com/en-gb/help/2977003/the-latest-supported-visual-c-downloads).
+1.  Install [Visual Studio 2019][8], [Visual Studio 2022](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-notes), or Visual Studio 2026 - you only need the **Desktop development with C++** workload
+2.  Install [CMake][9] 3.16 or newer (CMake 4.x is supported)
+3.  Install Qt 5.15.x (64-bit) from the [Qt website][10]. Select **MSVC 2019 64-bit** prebuilt components (`msvc2019_64`). This kit works with Visual Studio 2019 and newer. The steps below assume Qt is installed in `c:\Qt\5.15.2`
+4.  Get Rclone Browser source code - clone this repo with git or download a zip from [releases][3]
+5.  Open a **Developer Command Prompt for VS** (or any shell where `cmake` and the MSVC compiler are on `PATH`), then go to the source folder: `cd RcloneBrowser`
+6.  Create a build folder: `mkdir build` and `cd build`
+7.  Configure and build. Replace the `-G` value with the generator matching your Visual Studio version (run `cmake --help` to list installed generators):
+
+    * Visual Studio 2019: `"Visual Studio 16 2019"`
+    * Visual Studio 2022: `"Visual Studio 17 2022"`
+    * Visual Studio 2026: `"Visual Studio 18 2026"`
+
+    Example for 64-bit Release with Visual Studio 2026:
+
+    `cmake -G "Visual Studio 18 2026" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=c:\Qt\5.15.2\msvc2019_64 .. && cmake --build . --config Release`
+
+8.  Bundle Qt libraries with [windeployqt](https://doc.qt.io/qt-5/windows-deployment.html). Run this from the **build** folder (note the double `build` in the path - that is intentional):
+
+    `c:\Qt\5.15.2\msvc2019_64\bin\windeployqt.exe --no-translations --no-angle --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"`
+
+    windeployqt should report `64 bit, release executable` and copy release DLLs such as `Qt5Core.dll` (not `Qt5Cored.dll`). If you see debug DLL names, the executable path or build configuration is wrong - do not rename debug DLLs to work around this.
+
+9.  The runnable application is in `build\build\Release\` - `RcloneBrowser.exe` plus the Qt DLLs and plugin folders copied by windeployqt
+
+10. Because `--no-compiler-runtime` is used, target machines also need the matching [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) for the Visual Studio version you built with.
+
+*Optional:* `scripts\release_windows.cmd x64` automates a full release build (windeployqt, MSVC runtime DLLs, zip, and installer) when run from a configured release environment.
 
 Portable vs standard mode
 -----------------------

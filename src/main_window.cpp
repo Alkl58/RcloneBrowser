@@ -3687,7 +3687,7 @@ void MainWindow::runItem(JobOptionsListWidgetItem *item,
 
     QDateTime dt = QDateTime::currentDateTime();
     QDateTime widgetStartDateTime = dt;
-    int remove;
+    int remove = 0;
     bool foundOldest = false;
 
     for (int i = widgetsCount - 2; i >= 0; i = i - 2) {
@@ -5146,7 +5146,7 @@ void MainWindow::sortJobs() {
   }
 
   int widgetsCount = ui.jobs->count();
-  int move;
+  int move = widgetsCount > 2 ? widgetsCount - 4 : 0;
   QDateTime dt;
   QDateTime widgetStartDateTime;
   QString widgetStatus = 0;

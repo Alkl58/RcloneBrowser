@@ -81,7 +81,8 @@ MountDialog::MountDialog(const QString &remote, const QDir &path,
 
   // used drives' letters
   QStringList disksUsed;
-  int firstDiskFreeIndex;
+  int firstDiskFreeIndex = 0;
+  bool freeLetterFound = false;
 
   // initailize drive letters
   QStringList drivesList;
@@ -113,7 +114,6 @@ MountDialog::MountDialog(const QString &remote, const QDir &path,
         qobject_cast<QStandardItemModel *>(ui.combo_driveLetter->model());
     Q_ASSERT(model != nullptr);
     int j = 0;
-    bool freeLetterFound = false;
     for (const auto &i : drivesList) {
       if (disksUsed.contains(i)) {
         QStandardItem *item = model->item(j);
@@ -196,7 +196,7 @@ MountDialog::MountDialog(const QString &remote, const QDir &path,
     }
 
     // if letter already used switch to firstDiskFreeIndex
-    if (disksUsed.contains(ui.combo_driveLetter->currentText())) {
+    if (freeLetterFound && disksUsed.contains(ui.combo_driveLetter->currentText())) {
       ui.combo_driveLetter->setCurrentIndex(firstDiskFreeIndex);
     }
 

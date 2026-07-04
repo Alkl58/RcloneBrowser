@@ -1,10 +1,5 @@
-cmake_minimum_required(VERSION 2.8)
-
 if (NOT ${CMAKE_VERSION} VERSION_LESS "3.0.0")
 	cmake_policy(SET CMP0028 NEW)
-endif()
-if (NOT ${CMAKE_VERSION} VERSION_LESS "2.8.11")
-	cmake_policy(SET CMP0020 NEW)
 endif()
 
 if(WIN32)
@@ -17,7 +12,6 @@ if (APPLE)
   set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
 endif()
 
-project(rclone-browser)
 FIND_PACKAGE(Qt5Core REQUIRED)
 FIND_PACKAGE(Qt5Gui REQUIRED)
 FIND_PACKAGE(Qt5Widgets REQUIRED)

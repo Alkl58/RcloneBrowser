@@ -1,11 +1,14 @@
-project(rclone-browser)
-
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.16)
 
 if(WIN32)
+  # Match Qt's prebuilt MSVC libraries (/MD) and avoid LNK4098 CRT conflicts.
+  cmake_policy(SET CMP0091 NEW)
+  set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
   # link automatically to qtmain.lib on Windows
   cmake_policy(SET CMP0020 NEW)
 endif()
+
+project(rclone-browser)
 
 find_package(Qt5Widgets REQUIRED)
 if(WIN32)
@@ -22,7 +25,7 @@ if(WIN32)
   add_definitions("-D_UNICODE -DUNICODE -D_SCL_SECURE_NO_DEPRECATE -D_CRT_SECURE_NO_DEPRECATE")
 
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS} /GF /Gy /GS- /GR /GL")
+  set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /GF /Gy /GS- /GR /GL")
 
   set(CMAKE_EXE_LINKER_FLAGS "/INCREMENTAL:NO")
   set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/DEBUG")
