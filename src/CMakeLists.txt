@@ -161,7 +161,15 @@ if(WIN32)
 elseif(APPLE)
   set_source_files_properties(icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   add_executable(rclone-browser MACOSX_BUNDLE ${SOURCE} ${BACKEND} ${OTHER} ${MOC} ${MOC_OUT} ${UI_OUT} ${MOC_OUT} ${QRC_OUT} icon.icns)
-  target_link_libraries(rclone-browser Qt6::Widgets Qt6::Network ${OPTIONAL_QT_LIBS} ${COCOA_LIB} ${IOKKIT_LIB})
+  target_link_libraries(rclone-browser
+    Qt6::Widgets
+    Qt6::Network
+    ${OPTIONAL_QT_LIBS}
+    ${COCOA_LIB}
+    ${IOKKIT_LIB}
+    ${USER_NOTIFICATIONS_LIB}
+    ${UNIFORM_TYPE_IDENTIFIERS_LIB}
+  )
   set_target_properties(rclone-browser PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist")
 
 else()

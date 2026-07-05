@@ -21,6 +21,8 @@ find_package(Qt6 QUIET OPTIONAL_COMPONENTS Multimedia)
 if(APPLE)
   find_library(COCOA_LIB Cocoa REQUIRED)
   find_library(IOKKIT_LIB IOKit REQUIRED)
+  find_library(USER_NOTIFICATIONS_LIB UserNotifications REQUIRED)
+  find_library(UNIFORM_TYPE_IDENTIFIERS_LIB UniformTypeIdentifiers REQUIRED)
 endif()
 
 if(WIN32)

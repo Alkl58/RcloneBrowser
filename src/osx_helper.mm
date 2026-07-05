@@ -1,6 +1,7 @@
 #include "osx_helper.h"
 #include <ApplicationServices/ApplicationServices.h>
 #include <Cocoa/Cocoa.h>
+#import <UniformTypeIdentifiers/UniformTypeIdentifiers.h>
 
 // Qt 6 removed QtMacExtras (and QtMac::fromCGImageRef), so convert the
 // CGImageRef into a QImage manually by rendering it into a bitmap context.
@@ -31,8 +32,17 @@ static QImage qt_mac_toQImage(CGImageRef image) {
 QIcon osxGetIcon(const QString &extension) {
   QIcon icon;
   @autoreleasepool {
+    UTType *contentType =
+        [UTType typeWithFilenameExtension:extension.toNSString()];
+    if (!contentType) {
+      contentType = UTTypeData;
+    }
+
     NSImage *image =
-        [[NSWorkspace sharedWorkspace] iconForFileType:extension.toNSString()];
+        [[NSWorkspace sharedWorkspace] iconForContentType:contentType];
+    if (!image) {
+      return icon;
+    }
     NSRect rect = NSMakeRect(0, 0, image.size.width, image.size.height);
     CGImageRef imageRef = [image CGImageForProposedRect:&rect
                                                 context:NULL
