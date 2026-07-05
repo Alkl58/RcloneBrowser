@@ -2873,13 +2873,14 @@ void MainWindow::rcloneConfig() {
 
 #elif defined(Q_OS_MACOS)
   auto tmp = new QFile("/tmp/rclone_config.command");
-  tmp->open(QIODevice::WriteOnly);
-  QTextStream(tmp) << "#!/bin/sh\n" << terminalRcloneCmd << "\n";
-  tmp->close();
-  tmp->setPermissions(QFileDevice::ReadUser | QFileDevice::WriteUser |
-                      QFileDevice::ExeUser | QFileDevice::ReadGroup |
-                      QFileDevice::ExeGroup | QFileDevice::ReadOther |
-                      QFileDevice::ExeOther);
+  if (tmp->open(QIODevice::WriteOnly)) {
+    QTextStream(tmp) << "#!/bin/sh\n" << terminalRcloneCmd << "\n";
+    tmp->close();
+    tmp->setPermissions(QFileDevice::ReadUser | QFileDevice::WriteUser |
+                        QFileDevice::ExeUser | QFileDevice::ReadGroup |
+                        QFileDevice::ExeGroup | QFileDevice::ReadOther |
+                        QFileDevice::ExeOther);
+  }
   p->setProgram("open");
   p->setArguments(QStringList() << tmp->fileName());
 #else
