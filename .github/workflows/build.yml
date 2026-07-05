@@ -7,7 +7,10 @@ on:
       - master
       
   workflow_dispatch:
-  
+
+env:
+  QT_VERSION: '6.10.3'
+
 jobs:
   build_windows:
     name: Windows Build (x64)
@@ -18,7 +21,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.11.1'
+          version: ${{ env.QT_VERSION }}
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
@@ -44,7 +47,7 @@ jobs:
       - name: Install Qt (host x64 tools)
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.11.1'
+          version: ${{ env.QT_VERSION }}
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_64'
@@ -52,7 +55,7 @@ jobs:
       - name: Install Qt (ARM64 target)
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.11.1'
+          version: ${{ env.QT_VERSION }}
           host: 'windows'
           target: 'desktop'
           arch: 'win64_msvc2022_arm64'
@@ -60,7 +63,7 @@ jobs:
       - name: Build Rclone Browser
         shell: pwsh
         run: |
-          $qtArm64 = "${env:RUNNER_WORKSPACE}\Qt\6.11.1\msvc2022_arm64"
+          $qtArm64 = "${env:RUNNER_WORKSPACE}\Qt\${env:QT_VERSION}\msvc2022_arm64"
           mkdir build
           cd build
           cmake -G "Visual Studio 17 2022" -A ARM64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$qtArm64" ..
@@ -103,10 +106,10 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.11.1'
+          version: ${{ env.QT_VERSION }}
           host: 'mac'
           target: 'desktop'
-          arch: 'clang_arm64'
+          arch: 'clang_64'
           modules: 'qtmultimedia'
       - name: Build Rclone Browser
         run: |

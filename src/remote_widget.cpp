@@ -1646,7 +1646,7 @@ RemoteWidget::RemoteWidget(IconCache *iconCache, const QString &remote,
       [=](const QDir &path, const QModelIndex &parent) {
         setRemoteMode(ui.cb_GoogleDriveMode->currentIndex(), remoteType);
 
-        qApp->setActiveWindow(this);
+        activateWindow();
         QDir destPath = model->path(parent);
         QString dest = QFileInfo(path.path()).isDir()
                            ? destPath.filePath(path.dirName())
