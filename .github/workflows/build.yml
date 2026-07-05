@@ -14,32 +14,22 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Development Tools
-        run: |
-          choco install visualstudio2019community visualstudio2019-workload-nativedesktop cmake qt5-default -y
-          curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-          refreshenv
-          python get-pip.py
-          refreshenv
-          pip install py7zr lxml requests semantic-version
-          Remove-Item -Recurse -Force C:\Qt
-          mkdir C:\Qt
-          pushd C:\Qt
-          git clone https://github.com/engnr/qt-downloader.git
-          mv qt-downloader/qt-downloader .\qtd
-          Remove-Item -Recurse -Force qt-downloader
-          python qtd windows desktop 5.15.2 win64_msvc2019_64
-          popd
-          
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2019_64'
       - name: Build Rclone Browser
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 16 2019" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=C:\Qt\5.15.2\msvc2019_64 .. 
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" ..
           cmake --build . --config Release
-          C:\Qt\5.15.2\msvc2019_64\bin\windeployqt.exe --no-translations --no-angle --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
-      - uses: actions/upload-artifact@v3
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --no-translations --no-angle --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
+      - uses: actions/upload-artifact@v4
         with:
           name: windows
           path: build\build\Release\*
@@ -49,7 +39,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Development Tools
         run: |
           sudo apt update
@@ -61,7 +51,7 @@ jobs:
           cmake ..
           make -j $(nproc)
           
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
          name: linux
          path: build/build/*
@@ -71,43 +61,49 @@ jobs:
     runs-on: macos-latest
     
     steps:
-      - uses: actions/checkout@v3
-      - name: Install Development Tools
-        run: brew install git cmake rclone qt5
+      - uses: actions/checkout@v4
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '5.15.2'
+          host: 'mac'
+          target: 'desktop'
+          arch: 'clang_64'
       - name: Build Rclone Browser
         run: |
           mkdir build
           cd build
-          cmake .. -DCMAKE_PREFIX_PATH:PATH=/usr/local/opt/qt5
-          make -j $(nproc)
+          cmake .. -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR"
+          make -j $(sysctl -n hw.ncpu)
           cd build
-          /usr/local/opt/qt@5/bin/macdeployqt rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser" -qmldir=../src/
+          "$QT_ROOT_DIR/bin/macdeployqt" rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser" -qmldir=../src/
           mv rclone-browser.app Rclone\ Browser.app
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: macos
           path: build/build/*
         
   build_freebsd:
     name: FreeBSD Build
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install Development Tools and Build Rclone Browser
-        uses: vmactions/freebsd-vm@v0
+        uses: vmactions/freebsd-vm@v1
         with:
           mem: 4096
+          usesh: true
           prepare: |
             env ASSUME_ALWAYS_YES=YES pkg update -f
             env ASSUME_ALWAYS_YES=YES pkg install -y git cmake qt5-buildtools qt5-declarative qt5-multimedia qt5-qmake
-            cd work/RcloneBrowser/RcloneBrowser
+          run: |
             mkdir build
             cd build
             cmake ..
             make
             
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: freebsd
           path: build/build/*
@@ -118,10 +114,10 @@ jobs:
     needs: [build_windows, build_linux, build_macos, build_freebsd]
     
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Create artifact directory
         run: rm -rf /tmp/artifacts && mkdir /tmp/artifacts
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
           path: /tmp/artifacts
       - name: Compress artifacts
@@ -147,4 +143,3 @@ jobs:
           prerelease: true
           skipIfReleaseExists: true
           tag: release-${{ env.SHORT_SHA }}
-        
