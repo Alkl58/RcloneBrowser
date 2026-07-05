@@ -26,7 +26,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" ..
+          cmake -G "Visual Studio 18 2026" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" ..
           cmake --build . --config Release
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --no-translations --no-angle --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
       - uses: actions/upload-artifact@v4

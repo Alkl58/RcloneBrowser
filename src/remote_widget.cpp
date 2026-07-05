@@ -1619,9 +1619,7 @@ RemoteWidget::RemoteWidget(IconCache *iconCache, const QString &remote,
         clearPreemptiveQueues();
 
         // clear top folder's rows
-        int i = 0;
         while (model->removeRow(0, mRootIndex)) {
-          ++i;
         }
 
         ui.tree->selectionModel()->clear();
@@ -1976,9 +1974,7 @@ void RemoteWidget::switchRemoteType() {
 
     //!!!!!!!!! ???
     // clear top folder's rows
-    int i = 0;
     while (model->removeRow(0, mRootIndex)) {
-      ++i;
     }
 
     ui.tree->selectionModel()->clear();
