@@ -78,8 +78,8 @@ QString ListOfJobOptions::GetPersistenceFilePath() {
   } else {
 
     // get data location folder from Qt  - OS dependend
-    outputDir =
-        QDir(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+    outputDir = QDir(
+        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation));
   }
 
   // make sure the destination folder exists, otherwise saving would fail

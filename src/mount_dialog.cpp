@@ -526,7 +526,7 @@ QStringList MountDialog::getOptions() {
       if (!line.isEmpty()) {
 
         for (QString arg :
-             line.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+             line.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
           if (!arg.isEmpty()) {
             list << arg.replace("\"", "");
           }

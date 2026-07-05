@@ -62,7 +62,10 @@ int main(int argc, char *argv[]) {
   qt_set_sequence_auto_mnemonic(true);
 #endif
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+// Qt 6 always enables high-DPI scaling, so these attributes are only needed
+// (and only exist) on Qt 5.
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0) &&                                  \
+    QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
   static const char ENV_VAR_QT_DEVICE_PIXEL_RATIO[] = "QT_DEVICE_PIXEL_RATIO";
   if (!qEnvironmentVariableIsSet(ENV_VAR_QT_DEVICE_PIXEL_RATIO) &&
       !qEnvironmentVariableIsSet("QT_AUTO_SCREEN_SCALE_FACTOR") &&

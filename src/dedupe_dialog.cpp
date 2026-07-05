@@ -83,7 +83,7 @@ QStringList DedupeDialog::getOptions() const {
   QString extra = ui.textExtra->text().trimmed();
   if (!extra.isEmpty()) {
     for (QString arg :
-         extra.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+         extra.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
       if (!arg.isEmpty()) {
         list << arg.replace("\"", "");
       }

@@ -35,8 +35,8 @@ MainWindow::MainWindow() {
 
   auto settings = GetSettings();
 
-#if defined(Q_OS_WIN)
-  // disable "?" WindowContextHelpButton
+#if defined(Q_OS_WIN) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+  // disable "?" WindowContextHelpButton (Qt 6 no longer shows it by default)
   QApplication::setAttribute(Qt::AA_DisableWindowContextHelpButton);
 #endif
 
@@ -3939,7 +3939,7 @@ void MainWindow::runItem(JobOptionsListWidgetItem *item,
       for (auto line : jo->extra.trimmed().split('\n')) {
         if (!line.isEmpty()) {
           for (QString arg :
-               line.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+               line.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
             if (!arg.isEmpty()) {
               args << arg.replace("\"", "");
             }
@@ -4257,7 +4257,13 @@ void MainWindow::addTransfer(const QString &message, const QString &source,
 
         if (mSoundNotif) {
           // play notification sound
-          QSound::play(":media/sounds/notification-sound.wav");
+#ifdef RB_HAVE_MULTIMEDIA
+          if (mNotificationSound.source().isEmpty()) {
+            mNotificationSound.setSource(
+                QUrl("qrc:/media/sounds/notification-sound.wav"));
+          }
+          mNotificationSound.play();
+#endif
         }
 
         --mTransferJobCount;
@@ -4582,7 +4588,7 @@ void MainWindow::runScript(const QString &script) {
 
   QStringList scriptList;
 
-  for (QString arg : script.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+  for (QString arg : script.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
     if (!arg.isEmpty()) {
       scriptList << arg.replace("\"", "");
     }
@@ -4621,7 +4627,7 @@ void MainWindow::addNewMount(const QString &remote, const QString &folder,
     // split on spaces but not if inside quotes e.g. --option-1 --option-2="arg1
     // arg2" --option-3 arg3 should generate "--option-1" "--option-2=\"arg1
     // arg2\"" "--option-3" "arg3"
-    for (QString arg : opt.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+    for (QString arg : opt.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
       if (!arg.isEmpty()) {
         argsFinal << arg.replace("\"", "");
       }
@@ -5088,7 +5094,7 @@ void MainWindow::addStream(const QString &remote, const QString &stream,
 
   QStringList streamPrefsList;
 
-  for (QString arg : stream.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+  for (QString arg : stream.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
     if (!arg.isEmpty()) {
       streamPrefsList << arg.replace("\"", "");
     }

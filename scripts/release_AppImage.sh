@@ -22,18 +22,22 @@ set -e
 
 # armv7l build on raspbian stretch
 
-# Qt path and flags set in env e.g.:
-# export PATH="/opt/Qt/5.14.0/bin/:$PATH"
-# export CPPFLAGS="-I/opt/Qt/5.14.0/bin/include/"
-# export LDFLAGS="-L/opt/Qt/5.14.0/bin/lib/"
-# export LD_LIBRARY_PATH="/opt/Qt/5.14.0/bin/lib/:$LD_LIBRARY_PATH"
+# Qt 6 path and flags set in env e.g.:
+# export PATH="/opt/Qt/6.11.1/gcc_64/bin/:$PATH"
+# export CPPFLAGS="-I/opt/Qt/6.11.1/gcc_64/include/"
+# export LDFLAGS="-L/opt/Qt/6.11.1/gcc_64/lib/"
+# export LD_LIBRARY_PATH="/opt/Qt/6.11.1/gcc_64/lib/:$LD_LIBRARY_PATH"
+#
+# NOTE: linuxdeploy-plugin-qt must be a recent build that supports Qt 6.
+# Qt 6 requires a reasonably modern base distribution (glibc/GL); building the
+# AppImage on an older LTS than the Qt 6 minimum will not work.
 
-# for x86_64 and i686 platform
-# Qt 5.14.0 uses openssl 1.1 and some older distros still use 1.0
-# we build openssl 1.1.1g from source using following setup:
-# ./config shared --prefix=/opt/openssl-1.1.1/ && make --jobs=`nproc --all` && sudo make install
+# for x86_64 platform
+# Qt 6 links against OpenSSL 3.x; build it from source when the host distro
+# ships an older OpenSSL, e.g.:
+# ./config shared --prefix=/opt/openssl-3/ && make --jobs=`nproc --all` && sudo make install
 # and add to build env
-# export LD_LIBRARY_PATH="/opt/openssl-1.1.1/lib/:$LD_LIBRARY_PATH"
+# export LD_LIBRARY_PATH="/opt/openssl-3/lib/:$LD_LIBRARY_PATH"
 
 if [ "$1" = "SIGN" ]; then
   export SIGN="1"
@@ -132,9 +136,9 @@ cp "$ROOT"/LICENSE "$TEMP_BASE"/"$TARGET"/AppDir/License.txt
 linuxdeploy --appdir AppDir --desktop-file=AppDir/usr/share/applications/rclone-browser.desktop --plugin qt
 #linuxdeploy-plugin-qt --appdir AppDir
 
-# we add openssl 1.1.1 libs needed for distros still using openssl 1.0
-cp /opt/openssl-1.1.1/lib/libssl.so.1.1 ./AppDir/usr/bin/
-cp /opt/openssl-1.1.1/lib/libcrypto.so.1.1 ./AppDir/usr/bin/
+# bundle OpenSSL 3.x libs (Qt 6 TLS backend) for distros without OpenSSL 3
+cp /opt/openssl-3/lib/libssl.so.3 ./AppDir/usr/bin/
+cp /opt/openssl-3/lib/libcrypto.so.3 ./AppDir/usr/bin/
 
 # https://github.com/linuxdeploy/linuxdeploy-plugin-appimage
 linuxdeploy-plugin-appimage --appdir=AppDir

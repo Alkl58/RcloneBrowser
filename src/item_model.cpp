@@ -82,10 +82,10 @@ private:
 ItemModel::ItemModel(IconCache *icons, const QString &remote, QObject *parent)
     : QAbstractItemModel(parent), mRemote(remote),
       mFixedFont(QFontDatabase::systemFont(QFontDatabase::FixedFont)),
-      mRegExpFolder(
-          R"(^\s*[\d-]+ (\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d) \s*[\d-]+ (.+)$)"),
-      mRegExpFile(
-          R"(^\s*(\d+) (\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)\.\d+ (.+)$)") {
+      mRegExpFolder(QRegularExpression::anchoredPattern(
+          R"(\s*[\d-]+ (\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d) \s*[\d-]+ (.+))")),
+      mRegExpFile(QRegularExpression::anchoredPattern(
+          R"(\s*(\d+) (\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d)\.\d+ (.+))")) {
   QStyle *style = qApp->style();
   mDriveIcon = style->standardIcon(QStyle::SP_DriveNetIcon);
   mFolderIcon = style->standardIcon(QStyle::SP_DirIcon);
@@ -272,7 +272,7 @@ QVariant ItemModel::data(const QModelIndex &index, int role) const {
 
   if (role == Qt::TextAlignmentRole) {
     if (index.column() == 1) {
-      return Qt::AlignRight + Qt::AlignVCenter;
+      return QVariant::fromValue(Qt::AlignRight | Qt::AlignVCenter);
     }
     return QVariant();
   }
@@ -517,8 +517,9 @@ void ItemModel::load(const QPersistentModelIndex &parentIndex, Item *parent) {
       QString line = lsd->readLine();
       line.replace("\n", "");
 
-      if (mRegExpFolder.exactMatch(line)) {
-        QStringList cap = mRegExpFolder.capturedTexts();
+      QRegularExpressionMatch match = mRegExpFolder.match(line);
+      if (match.hasMatch()) {
+        QStringList cap = match.capturedTexts();
 
         Item *child = new Item();
         child->isFolder = true;
@@ -537,8 +538,9 @@ void ItemModel::load(const QPersistentModelIndex &parentIndex, Item *parent) {
       QString line = lsl->readLine();
       line.replace("\n", "");
 
-      if (mRegExpFile.exactMatch(line)) {
-        QStringList cap = mRegExpFile.capturedTexts();
+      QRegularExpressionMatch match = mRegExpFile.match(line);
+      if (match.hasMatch()) {
+        QStringList cap = match.capturedTexts();
 
         Item *child = new Item();
         child->parent = parent;

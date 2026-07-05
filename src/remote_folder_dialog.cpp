@@ -340,7 +340,7 @@ QStringList RemoteFolderDialog::getOptions() {
       if (!line.isEmpty()) {
 
         for (QString arg :
-             line.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+             line.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
           if (!arg.isEmpty()) {
             args << arg.replace("\"", "");
           }

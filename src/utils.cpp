@@ -299,7 +299,7 @@ QStringList GetDefaultOptionsList(const QString &settingsOptions) {
     // arg2" --option-3 arg3 should generate "--option-1" "--option-2=\"arg1
     // arg2\"" "--option-3" "arg3"
     for (QString arg :
-         defaultOptions.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+         defaultOptions.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
       if (!arg.isEmpty()) {
         defaultOptionsList << arg.replace("\"", "");
       }
@@ -347,8 +347,8 @@ QDir GetConfigDir() {
 
   } else {
     // get data location folder from Qt  - OS dependend
-    outputDir =
-        QDir(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
+    outputDir = QDir(
+        QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation));
   }
 
   //  if (!outputDir.exists()) {

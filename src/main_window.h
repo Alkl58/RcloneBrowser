@@ -55,6 +55,11 @@ private:
   Ui::MainWindow ui;
 
   QSystemTrayIcon mSystemTray;
+  // Qt 6 removed QSound; QSoundEffect replaces it for the finished-transfer
+  // notification chime (only when the Multimedia module is available).
+#ifdef RB_HAVE_MULTIMEDIA
+  QSoundEffect mNotificationSound;
+#endif
   JobWidget *mLastFinished = nullptr;
 
   bool mAlwaysShowInTray;
