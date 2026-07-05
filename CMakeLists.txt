@@ -10,11 +10,15 @@ endif()
 
 project(rclone-browser)
 
-find_package(Qt5Widgets REQUIRED)
-if(WIN32)
-  find_package(Qt5WinExtras REQUIRED)
-elseif(APPLE)
-  find_package(Qt5MacExtras REQUIRED)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+# Multimedia is only used for the optional finished-transfer notification
+# sound. Treat it as optional so the app still builds with Qt kits that do not
+# ship the Multimedia module.
+find_package(Qt6 QUIET OPTIONAL_COMPONENTS Multimedia)
+if(APPLE)
   find_library(COCOA_LIB Cocoa REQUIRED)
   find_library(IOKKIT_LIB IOKit REQUIRED)
 endif()

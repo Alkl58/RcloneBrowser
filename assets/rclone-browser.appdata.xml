@@ -7,7 +7,7 @@
   <name>Rclone Browser</name>
   <summary>Simple cross platfrom GUI for rclone command line</summary>
   <description>
-    <p>Rclone Browser is a cross-platform Qt5 GUI for Rclone, a command line tool to synchronize (and mount) files from remote cloud storage services like Google Drive, OneDrive, Nextcloud, Dropbox, Amazon Drive and S3, Mega, and others. Use it to copy a file from one cloud storage service to another, from a cloud storage to your system or the other way around, and to mount some cloud storage on your system with a single click.</p>
+    <p>Rclone Browser is a cross-platform Qt 6 GUI for Rclone, a command line tool to synchronize (and mount) files from remote cloud storage services like Google Drive, OneDrive, Nextcloud, Dropbox, Amazon Drive and S3, Mega, and others. Use it to copy a file from one cloud storage service to another, from a cloud storage to your system or the other way around, and to mount some cloud storage on your system with a single click.</p>
     <p> - Allows to browse and modify any rclone remote, including encrypted ones</p>
     <p> - Uses same configuration file as rclone, no extra configuration required</p>
     <p> - Supports custom location and encryption for .rclone.conf configuration file</p>

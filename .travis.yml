@@ -7,12 +7,13 @@ matrix:
     - os: linux
       language: cpp
       sudo: false
-      dist: bionic
+      dist: jammy
       addons:
         apt:
           packages:
-            - qttools5-dev
-            - qtmultimedia5-dev
+            - qt6-base-dev
+            - qt6-multimedia-dev
+            - libgl1-mesa-dev
 
       script:
         - mkdir build && cd build

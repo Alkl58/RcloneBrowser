@@ -154,11 +154,11 @@ Build instructions
 
 ### Linux
 1.  Install dependencies for your particular distribution:
-    *   **Debian/Ubuntu and derivatives**: `sudo apt update && sudo apt -y install git g++ cmake make qtdeclarative5-dev qtmultimedia5-dev`
-    *   **Suse/OpenSuse**: `sudo zypper ref && sudo zypper --non-interactive install git cmake make gcc-c++ libQt5Core-devel libQt5Widgets-devel libQt5Network-devel libqt5-qtmultimedia-devel`
-    *   **RHEL/CentOS**: `sudo yum -y install git gcc-c++ cmake make qt5-qtdeclarative qt5-qtmultimedia-devel`
-    *   **Fedora**: `sudo dnf -y install git g++ cmake make qt5-qtdeclarative-devel qt5-qtmultimedia-devel`
-    *   **Arch/Manjaro**: `sudo pacman -Sy --noconfirm --needed git gcc cmake make qt5-declarative qt5-multimedia`
+    *   **Debian/Ubuntu and derivatives**: `sudo apt update && sudo apt -y install git g++ cmake make qt6-base-dev qt6-multimedia-dev libgl1-mesa-dev`
+    *   **Suse/OpenSuse**: `sudo zypper ref && sudo zypper --non-interactive install git cmake make gcc-c++ qt6-base-devel qt6-multimedia-devel`
+    *   **RHEL/CentOS**: `sudo yum -y install git gcc-c++ cmake make qt6-qtbase-devel qt6-qtmultimedia-devel`
+    *   **Fedora**: `sudo dnf -y install git g++ cmake make qt6-qtbase-devel qt6-qtmultimedia-devel`
+    *   **Arch/Manjaro**: `sudo pacman -Sy --noconfirm --needed git gcc cmake make qt6-base qt6-multimedia`
 2.  Clone source code from this repo `git clone https://github.com/kapitainsky/RcloneBrowser.git`
 3.  Go to source folder `cd RcloneBrowser`
 4.  Create new build folder - `mkdir build && cd build`
@@ -167,7 +167,7 @@ Build instructions
 7.  Install `sudo make install`
 
 ### FreeBSD
-1.  Install dependencies `sudo pkg install git cmake qt5-buildtools qt5-declarative qt5-multimedia qt5-qmake`
+1.  Install dependencies `sudo pkg install git cmake qt6-base qt6-multimedia`
 2.  Clone source code from this repo `git clone https://github.com/kapitainsky/RcloneBrowser.git`
 3.  Go to source folder `cd RcloneBrowser`
 4.  Create new build folder - `mkdir build && cd build`
@@ -178,22 +178,22 @@ Build instructions
 *Note: For rclone remotes mount to work please see this forum [thread](https://forum.rclone.org/t/failed-to-mount-fuse-fs-freebsd/7723/9). For me it was enough to run `sudo sysctl vfs.usermount=1`*
 
 ### OpenBSD
-1.  Install dependencies `sudo pkg_add git cmake qt5`
+1.  Install dependencies `sudo pkg_add git cmake qt6`
 2.  Clone source code from this repo `git clone https://github.com/kapitainsky/RcloneBrowser.git`
 3.  Go to source folder `cd RcloneBrowser`
 4.  Create new build folder - `mkdir build && cd build`
-5.  Run `cmake .. -DCMAKE_PREFIX_PATH:PATH=/usr/local/lib/qt5/cmake` from build folder to create makefile
+5.  Run `cmake .. -DCMAKE_PREFIX_PATH:PATH=/usr/local/lib/qt6/cmake` from build folder to create makefile
 6.  Run `make` from build folder to create binary
 7.  Install `sudo make install`
 
 *Note: rclone for openBSD does not support `mount` hence this feature is disabled in Rclone Browser. cgofuse guys did not manage to implement it: [#18][billziss-gh_cgofuse_i18]*
 
 ### NetBSD
-1.  Install dependencies `sudo pkgin install git cmake qt5-qtdeclarative qt5-qtmultimedia`
+1.  Install dependencies `sudo pkgin install git cmake qt6-qtbase qt6-qtmultimedia`
 2.  Clone source code from this repo `git clone https://github.com/kapitainsky/RcloneBrowser.git`
 3.  Go to source folder `cd RcloneBrowser`
 4.  Create new build folder - `mkdir build && cd build`
-5.  Run `cmake .. -DCMAKE_PREFIX_PATH:PATH=/usr/pkg/qt5` from build folder to create makefile
+5.  Run `cmake .. -DCMAKE_PREFIX_PATH:PATH=/usr/pkg/qt6` from build folder to create makefile
 6.  Run `make` from build folder to create binary
 7.  Install `sudo make install`
 
@@ -202,43 +202,48 @@ Build instructions
 ### macOS
 1.  If you don't have [Homebrew](https://brew.sh/) yet install it `/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"`
 2.  You might be asked to install xcode command line tools - do it. This is actuall macOS SDK, headers, and build tools. You don't need full xcode IDE.
-3.  Install dependencies `brew install git cmake rclone qt5`
+3.  Install dependencies `brew install git cmake rclone qt` (Homebrew's `qt` formula is Qt 6, and builds natively for Apple Silicon and Intel)
 4.  Clone source code from this repo `git clone https://github.com/kapitainsky/RcloneBrowser.git`
 5.  Go to source folder `cd RcloneBrowser`
 6.  Create new build folder - `mkdir build && cd build`
-7.  Run `cmake .. -DCMAKE_PREFIX_PATH:PATH=/usr/local/opt/qt` from build folder to create makefile
+7.  Run `cmake .. -DCMAKE_PREFIX_PATH:PATH="$(brew --prefix qt)"` from build folder to create makefile (on Apple Silicon this is `/opt/homebrew/opt/qt`, on Intel `/usr/local/opt/qt`)
 8.  Run `make` from build folder to create binary
 9.  Go to yet another newly created build folder `cd build`. Your binary should be here
-10. Package your binary with Qt libraries to create self contained application `/usr/local/opt/qt/bin/macdeployqt rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser" -qmldir=../src/`. Without this step binary won't work without Qt installed
+10. Package your binary with Qt libraries to create self contained application `"$(brew --prefix qt)"/bin/macdeployqt rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser"`. Without this step binary won't work without Qt installed
 
 ### Windows
-1.  Install [Visual Studio 2019][8], [Visual Studio 2022](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-notes), or Visual Studio 2026 - you only need the **Desktop development with C++** workload
+1.  Install [Visual Studio 2022](https://learn.microsoft.com/en-us/visualstudio/releases/2022/release-notes) or Visual Studio 2026 - you only need the **Desktop development with C++** workload. For a native Windows on ARM build also add the **ARM64 build tools** component.
 2.  Install [CMake][9] 3.16 or newer (CMake 4.x is supported)
-3.  Install Qt 5.15.x (64-bit) from the [Qt website][10]. Select **MSVC 2019 64-bit** prebuilt components (`msvc2019_64`). This kit works with Visual Studio 2019 and newer. The steps below assume Qt is installed in `c:\Qt\5.15.2`
+3.  Install Qt 6.11.x from the [Qt website][10]. Select the **MSVC 2022 64-bit** prebuilt component (`msvc2022_64`), and optionally **Qt Multimedia** (only needed for the finished-transfer notification sound). For native Windows on ARM also install the **MSVC 2022 ARM64** kit (`msvc2022_arm64`). The steps below assume Qt is installed in `c:\Qt\6.11.1`
 4.  Get Rclone Browser source code - clone this repo with git or download a zip from [releases][3]
 5.  Open a **Developer Command Prompt for VS** (or any shell where `cmake` and the MSVC compiler are on `PATH`), then go to the source folder: `cd RcloneBrowser`
 6.  Create a build folder: `mkdir build` and `cd build`
 7.  Configure and build. Replace the `-G` value with the generator matching your Visual Studio version (run `cmake --help` to list installed generators):
 
-    * Visual Studio 2019: `"Visual Studio 16 2019"`
     * Visual Studio 2022: `"Visual Studio 17 2022"`
     * Visual Studio 2026: `"Visual Studio 18 2026"`
 
-    Example for 64-bit Release with Visual Studio 2026:
+    Example for 64-bit Release with Visual Studio 2022:
 
-    `cmake -G "Visual Studio 18 2026" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=c:\Qt\5.15.2\msvc2019_64 .. && cmake --build . --config Release`
+    `cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=c:\Qt\6.11.1\msvc2022_64 .. && cmake --build . --config Release`
 
-8.  Bundle Qt libraries with [windeployqt](https://doc.qt.io/qt-5/windows-deployment.html). Run this from the **build** folder (note the double `build` in the path - that is intentional):
+    For a native Windows on ARM (ARM64) build, use the ARM64 kit and architecture:
 
-    `c:\Qt\5.15.2\msvc2019_64\bin\windeployqt.exe --no-translations --no-angle --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"`
+    `cmake -G "Visual Studio 17 2022" -A ARM64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=c:\Qt\6.11.1\msvc2022_arm64 .. && cmake --build . --config Release`
 
-    windeployqt should report `64 bit, release executable` and copy release DLLs such as `Qt5Core.dll` (not `Qt5Cored.dll`). If you see debug DLL names, the executable path or build configuration is wrong - do not rename debug DLLs to work around this.
+8.  Bundle Qt libraries with [windeployqt](https://doc.qt.io/qt-6/windows-deployment.html). Run this from the **build** folder (note the double `build` in the path - that is intentional):
+
+    `c:\Qt\6.11.1\msvc2022_64\bin\windeployqt.exe --no-translations --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"`
+
+    windeployqt should copy release DLLs such as `Qt6Core.dll` (not `Qt6Cored.dll`). If you see debug DLL names, the executable path or build configuration is wrong - do not rename debug DLLs to work around this. (The old `--no-angle` flag is gone in Qt 6.)
 
 9.  The runnable application is in `build\build\Release\` - `RcloneBrowser.exe` plus the Qt DLLs and plugin folders copied by windeployqt
 
 10. Because `--no-compiler-runtime` is used, target machines also need the matching [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist) for the Visual Studio version you built with.
 
-*Optional:* `scripts\release_windows.cmd x64` automates a full release build (windeployqt, MSVC runtime DLLs, zip, and installer) when run from a configured release environment.
+*Optional:* `scripts\release_windows.cmd x64` (or `arm64`) automates a full release build (windeployqt, MSVC runtime DLLs, zip, and installer) when run from a configured release environment.
+
+> **Note:** Qt 6 no longer provides 32-bit Windows desktop kits, so 32-bit Windows builds are no longer supported.
 
 Portable vs standard mode
 -----------------------

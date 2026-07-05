@@ -98,8 +98,8 @@ private:
   int mSortColumn;
   Qt::SortOrder mSortOrder;
 
-  QRegExp mRegExpFolder;
-  QRegExp mRegExpFile;
+  QRegularExpression mRegExpFolder;
+  QRegularExpression mRegExpFile;
 
   QMutex mRcloneLsProcessCountMutex;
 

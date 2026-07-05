@@ -5,23 +5,25 @@ endif()
 if(WIN32)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4 /WX /wd4100 /wd4189")
 else()
-  add_definitions("-pedantic -Wall -Wextra -Werror -std=c++11")
+  add_definitions("-pedantic -Wall -Wextra -Werror")
 endif()
 
 if (APPLE)
-  set(CMAKE_OSX_DEPLOYMENT_TARGET 10.13)
+  set(CMAKE_OSX_DEPLOYMENT_TARGET 12.0)
 endif()
 
-FIND_PACKAGE(Qt5Core REQUIRED)
-FIND_PACKAGE(Qt5Gui REQUIRED)
-FIND_PACKAGE(Qt5Widgets REQUIRED)
-FIND_PACKAGE(Qt5Network REQUIRED)
-FIND_PACKAGE(Qt5Multimedia REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+find_package(Qt6 QUIET OPTIONAL_COMPONENTS Multimedia)
 
-if (WIN32)
-FIND_PACKAGE(Qt5WinExtras REQUIRED)
-elseif(APPLE)
-FIND_PACKAGE(Qt5MacExtras REQUIRED)
+# Qt 6 makes the QFileInfo(const QString &) constructor explicit by default.
+# Keep the Qt 5 implicit behaviour to avoid churn across the codebase.
+add_definitions(-DQT_IMPLICIT_QFILEINFO_CONSTRUCTION)
+
+# Enable the notification sound only when the Multimedia module is available.
+set(OPTIONAL_QT_LIBS "")
+if(TARGET Qt6::Multimedia)
+  add_definitions(-DRB_HAVE_MULTIMEDIA)
+  list(APPEND OPTIONAL_QT_LIBS Qt6::Multimedia)
 endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -126,9 +128,9 @@ set(QRC resources.qrc)
 
 add_definitions(-DRCLONE_BROWSER_VERSION="${RCLONE_BROWSER_VERSION}")
 
-qt5_wrap_ui(UI_OUT ${UI})
-qt5_wrap_cpp(MOC_OUT ${MOC})
-qt5_add_resources(QRC_OUT ${QRC} OPTIONS "-no-compress")
+qt6_wrap_ui(UI_OUT ${UI})
+qt6_wrap_cpp(MOC_OUT ${MOC})
+qt6_add_resources(QRC_OUT ${QRC} OPTIONS "-no-compress")
 
 source_group("" FILES ${SOURCE} ${MOC} ${UI} ${QRC} ${OTHER})
 source_group("Generated" FILES ${MOC_OUT} ${UI_OUT} ${MOC_OUT} ${QRC_OUT})
@@ -155,16 +157,16 @@ ADD_MSVC_PRECOMPILED_HEADER(pch.h pch.cpp MOC_OUT)
 
 if(WIN32)
   add_executable(RcloneBrowser WIN32 ${SOURCE} ${BACKEND} ${OTHER} ${MOC} ${MOC_OUT} ${UI_OUT} ${MOC_OUT} ${QRC_OUT})
-  target_link_libraries(RcloneBrowser Qt5::Widgets Qt5::Network Qt5::WinExtras Qt5::Multimedia)
+  target_link_libraries(RcloneBrowser Qt6::Widgets Qt6::Network ${OPTIONAL_QT_LIBS})
 elseif(APPLE)
   set_source_files_properties(icon.icns PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
   add_executable(rclone-browser MACOSX_BUNDLE ${SOURCE} ${BACKEND} ${OTHER} ${MOC} ${MOC_OUT} ${UI_OUT} ${MOC_OUT} ${QRC_OUT} icon.icns)
-  target_link_libraries(rclone-browser Qt5::Widgets Qt5::Network Qt5::MacExtras Qt5::Multimedia ${COCOA_LIB} ${IOKKIT_LIB})
+  target_link_libraries(rclone-browser Qt6::Widgets Qt6::Network ${OPTIONAL_QT_LIBS} ${COCOA_LIB} ${IOKKIT_LIB})
   set_target_properties(rclone-browser PROPERTIES MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/Info.plist")
 
 else()
   add_executable(rclone-browser ${SOURCE} ${BACKEND} ${OTHER} ${MOC} ${MOC_OUT} ${UI_OUT} ${MOC_OUT} ${QRC_OUT})
-  target_link_libraries(rclone-browser Qt5::Widgets Qt5::Network Qt5::Multimedia)
+  target_link_libraries(rclone-browser Qt6::Widgets Qt6::Network ${OPTIONAL_QT_LIBS})
 
   install(TARGETS rclone-browser RUNTIME DESTINATION bin)
   install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/../assets/rclone-browser.svg" DESTINATION "share/icons/hicolor/scalable/apps" RENAME "rclone-browser.svg")

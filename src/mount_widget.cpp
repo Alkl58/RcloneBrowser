@@ -233,13 +233,14 @@ MountWidget::MountWidget(QProcess *process, const QString &remote,
 
   QObject::connect(mProcess, &QProcess::readyRead, this, [=]() {
     QString line;
-    QRegExp rx("^.+Serving\\sremote\\scontrol\\son\\s\\S+$");
+    QRegularExpression rx(QRegularExpression::anchoredPattern(
+        "^.+Serving\\sremote\\scontrol\\son\\s\\S+$"));
 
     while (mProcess->canReadLine()) {
       line = mProcess->readLine().trimmed();
       ui.output->appendPlainText(line);
       // we capture RC port here from rclone output
-      if (rx.exactMatch(line)) {
+      if (rx.match(line).hasMatch()) {
         line.replace("/", "");
         mRcPort = line.right(line.length() - line.lastIndexOf(":") - 1);
       }
@@ -257,11 +258,11 @@ MountWidget::MountWidget(QProcess *process, const QString &remote,
         QString password;
         int index;
 
-        index = mArgs.indexOf(QRegExp("^--rc-user\\S+"));
+        index = mArgs.indexOf(QRegularExpression("^--rc-user\\S+"));
         user = mArgs.at(index);
         user.replace("--rc-user=", "");
 
-        index = mArgs.indexOf(QRegExp("^--rc-pass\\S+"));
+        index = mArgs.indexOf(QRegularExpression("^--rc-pass\\S+"));
         password = mArgs.at(index);
         password.replace("--rc-pass=", "");
 
@@ -350,7 +351,7 @@ void MountWidget::cancel() {
       this, [=](int status, QProcess::ExitStatus) {
         if (status != 0) {
           // unmounting failed
-          mUnmountingError = status;
+          mUnmountingError = QString::number(status);
           ui.cancel->setEnabled(true);
           ui.showDetails->setStyleSheet(
               "QToolButton { border: 0; color: red; font-weight: bold;}");
@@ -385,10 +386,10 @@ void MountWidget::cancel() {
 
   unmountArgs << "localhost:" + mRcPort;
 
-  index = mArgs.indexOf(QRegExp("^--rc-user\\S+"));
+  index = mArgs.indexOf(QRegularExpression("^--rc-user\\S+"));
   user = mArgs.at(index);
 
-  index = mArgs.indexOf(QRegExp("^--rc-pass\\S+"));
+  index = mArgs.indexOf(QRegularExpression("^--rc-pass\\S+"));
   password = mArgs.at(index);
 
   unmountArgs << user << password;

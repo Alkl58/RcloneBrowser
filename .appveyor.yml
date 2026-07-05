@@ -1,5 +1,5 @@
 version: '#{build}'
-image: 'Visual Studio 2019'
+image: 'Visual Studio 2022'
 branches:
   only:
   - master
@@ -7,20 +7,18 @@ branches:
 skip_tags: true
 clone_depth: 1
 
+# Qt 6 no longer ships 32-bit Windows desktop kits, so only x64 is built.
+# Adjust QT_DIR to match the Qt 6 version available on the AppVeyor image.
 environment:
+  QT_DIR: C:\Qt\6.11.1\msvc2022_64
   matrix:
    - configuration: x64
      BUILD_ARCH: x64
-     BUILD_MSVC: msvc2017_64
-
-   - configuration: Win32
-     BUILD_ARCH: Win32
-     BUILD_MSVC: msvc2017
 
 build_script:
   - mkdir build
   - cd build
-  - cmake -G "Visual Studio 16 2019" -A %BUILD_ARCH% -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=C:\Qt\5.14\%BUILD_MSVC% ..
+  - cmake -G "Visual Studio 17 2022" -A %BUILD_ARCH% -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH=%QT_DIR% ..
   - cmake --build . --config Release
 
 artifacts:

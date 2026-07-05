@@ -163,7 +163,7 @@ QStringList JobOptions::getOptions() const {
       // --option-2="arg1 arg2" --option-3 arg3 should generate "--option-1"
       // "--option-2=\"arg1 arg2\"" "--option-3" "arg3"
       for (QString arg :
-           line.split(QRegExp(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
+           line.split(QRegularExpression(" (?=[^\"]*(\"[^\"]*\"[^\"]*)*$)"))) {
         if (!arg.isEmpty()) {
           list << arg.replace("\"", "");
         }

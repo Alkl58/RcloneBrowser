@@ -2,7 +2,13 @@
 
 set -e
 
-QTDIR=/usr/local/opt/qt
+# Homebrew installs Qt 6 under /opt/homebrew on Apple Silicon and
+# /usr/local on Intel. Override QTDIR to point at another Qt 6 kit if needed.
+if [ -d /opt/homebrew/opt/qt ]; then
+  QTDIR=/opt/homebrew/opt/qt
+else
+  QTDIR=/usr/local/opt/qt
+fi
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"/..
 VERSION=$(cat "$ROOT"/VERSION)-$(git rev-parse --short HEAD)
@@ -29,12 +35,12 @@ fi
 
 mkdir -p "$BUILD"
 cd "$BUILD"
-# brew install cmake qt5
+# brew install cmake qt
 cmake .. -DCMAKE_PREFIX_PATH="$QTDIR" -DCMAKE_BUILD_TYPE=Release
 # brew install coreutils
 make --jobs=$(nproc --all)
 cd build
-"$QTDIR"/bin/macdeployqt rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser" -qmldir=../src/
+"$QTDIR"/bin/macdeployqt rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser"
 cd ../..
 
 

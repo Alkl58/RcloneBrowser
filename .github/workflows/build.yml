@@ -10,7 +10,7 @@ on:
   
 jobs:
   build_windows:
-    name: Windows Build
+    name: Windows Build (x64)
     runs-on: windows-latest
     
     steps:
@@ -18,20 +18,58 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '5.15.2'
+          version: '6.11.1'
           host: 'windows'
           target: 'desktop'
-          arch: 'win64_msvc2019_64'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtmultimedia'
       - name: Build Rclone Browser
         run: |
           mkdir build
           cd build
-          cmake -G "Visual Studio 18 2026" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" ..
+          cmake -G "Visual Studio 17 2022" -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" ..
           cmake --build . --config Release
-          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --no-translations --no-angle --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
+          & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --no-translations --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
       - uses: actions/upload-artifact@v4
         with:
           name: windows
+          path: build\build\Release\*
+
+  build_windows_arm64:
+    name: Windows Build (ARM64)
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Qt (host x64 tools)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.11.1'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_64'
+          modules: 'qtmultimedia'
+      - name: Install Qt (ARM64 target)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.11.1'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_msvc2022_arm64'
+          modules: 'qtmultimedia'
+      - name: Build Rclone Browser
+        shell: pwsh
+        run: |
+          $qtArm64 = "${env:RUNNER_WORKSPACE}\Qt\6.11.1\msvc2022_arm64"
+          mkdir build
+          cd build
+          cmake -G "Visual Studio 17 2022" -A ARM64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$qtArm64" ..
+          cmake --build . --config Release
+          # windeployqt from the ARM64 kit deploys the matching ARM64 Qt DLLs.
+          & "$qtArm64\bin\windeployqt.exe" --no-translations --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64
           path: build\build\Release\*
           
   build_linux:
@@ -43,7 +81,7 @@ jobs:
       - name: Install Development Tools
         run: |
           sudo apt update
-          sudo apt -y install git g++ cmake make qtdeclarative5-dev qtmultimedia5-dev
+          sudo apt -y install git g++ cmake make qt6-base-dev qt6-multimedia-dev libgl1-mesa-dev
       - name: Build Rclone Browser
         run: |
           mkdir build
@@ -57,7 +95,7 @@ jobs:
          path: build/build/*
          
   build_macos:
-    name: macOS Build
+    name: macOS Build (Apple Silicon)
     runs-on: macos-latest
     
     steps:
@@ -65,22 +103,20 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '5.15.2'
+          version: '6.11.1'
           host: 'mac'
           target: 'desktop'
-          arch: 'clang_64'
+          arch: 'clang_arm64'
+          modules: 'qtmultimedia'
       - name: Build Rclone Browser
         run: |
           mkdir build
           cd build
-          # Qt 5.15.2 open-source binaries are x86_64 only (no native arm64 build
-          # exists for open-source 5.15.x), while macos-latest runners are Apple
-          # Silicon. Force an x86_64 build so it links against the Qt frameworks;
-          # the result runs natively on Intel and via Rosetta 2 on Apple Silicon.
-          cmake .. -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DCMAKE_OSX_ARCHITECTURES=x86_64
+          # macos-latest runners are Apple Silicon; build natively for arm64.
+          cmake .. -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DCMAKE_OSX_ARCHITECTURES=arm64
           make -j $(sysctl -n hw.ncpu)
           cd build
-          "$QT_ROOT_DIR/bin/macdeployqt" rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser" -qmldir=../src/
+          "$QT_ROOT_DIR/bin/macdeployqt" rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser"
           mv rclone-browser.app Rclone\ Browser.app
       - uses: actions/upload-artifact@v4
         with:
@@ -100,7 +136,7 @@ jobs:
           usesh: true
           prepare: |
             env ASSUME_ALWAYS_YES=YES pkg update -f
-            env ASSUME_ALWAYS_YES=YES pkg install -y git cmake qt5-buildtools qt5-declarative qt5-multimedia qt5-qmake
+            env ASSUME_ALWAYS_YES=YES pkg install -y git cmake qt6-base qt6-multimedia
           run: |
             mkdir build
             cd build
@@ -115,7 +151,7 @@ jobs:
   create_release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
-    needs: [build_windows, build_linux, build_macos, build_freebsd]
+    needs: [build_windows, build_windows_arm64, build_linux, build_macos, build_freebsd]
     
     steps:
       - uses: actions/checkout@v4
