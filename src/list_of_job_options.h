@@ -22,6 +22,7 @@ private:
   static ListOfJobOptions *SavedJobOptions;
   static const QString persistenceFileName;
   static bool RestoreFromUserData(ListOfJobOptions &dataIn);
+  static QString GetPersistenceFilePath();
   static QFile *GetPersistenceFile(QIODevice::OpenModeFlag mode);
 
   QList<JobOptions *> tasks;

@@ -52,7 +52,7 @@ bool ListOfJobOptions::Forget(JobOptions *jo) {
   return isKnown;
 }
 
-QFile *ListOfJobOptions::GetPersistenceFile(QIODevice::OpenModeFlag mode) {
+QString ListOfJobOptions::GetPersistenceFilePath() {
 
   QDir outputDir;
 
@@ -82,10 +82,23 @@ QFile *ListOfJobOptions::GetPersistenceFile(QIODevice::OpenModeFlag mode) {
         QDir(QStandardPaths::writableLocation(QStandardPaths::DataLocation));
   }
 
+  // make sure the destination folder exists, otherwise saving would fail
   if (!outputDir.exists()) {
-    outputDir.mkpath(".");
+    if (!outputDir.mkpath(".")) {
+      qWarning() << "Could not create tasks folder:" << outputDir.absolutePath();
+      return QString();
+    }
   }
-  QString filePath = outputDir.absoluteFilePath(persistenceFileName);
+
+  return outputDir.absoluteFilePath(persistenceFileName);
+}
+
+QFile *ListOfJobOptions::GetPersistenceFile(QIODevice::OpenModeFlag mode) {
+
+  QString filePath = GetPersistenceFilePath();
+  if (filePath.isEmpty())
+    return nullptr;
+
   QFile *file = new QFile(filePath);
 
   if (!file->open(mode)) {
@@ -104,12 +117,14 @@ bool ListOfJobOptions::RestoreFromUserData(ListOfJobOptions &dataIn) {
   instream.setVersion(QDataStream::Qt_5_2);
 
   while (!instream.atEnd()) {
+    JobOptions *jo = new JobOptions();
     try {
-      JobOptions *jo = new JobOptions();
       instream >> *jo;
       dataIn.tasks.append(jo);
     } catch (SerializationException &ex) {
       //      qDebug() << QString("failed to restore tasks: ") << ex.Message;
+      // avoid leaking the partially-read object that failed to deserialize
+      delete jo;
       file->close();
       delete file;
       return false;
@@ -123,19 +138,25 @@ bool ListOfJobOptions::RestoreFromUserData(ListOfJobOptions &dataIn) {
 }
 
 bool ListOfJobOptions::PersistToUserData() {
-  QFile *file = GetPersistenceFile(QIODevice::ReadOnly);
+  // Determine the destination path directly (creating the folder if needed)
+  // instead of opening the existing file. Previously this opened the file in
+  // ReadOnly mode just to read its path, which failed when the file did not
+  // exist yet - meaning tasks/queues were never saved on a fresh install.
+  QString filePath = GetPersistenceFilePath();
 
-  if (file == nullptr)
+  if (filePath.isEmpty()) {
+    qWarning() << "Could not determine tasks file location; tasks not saved.";
     return false;
+  }
 
-  QFileInfo fileToSaveInfo(*file);
-
-  QSaveFile fileToSave(fileToSaveInfo.absoluteFilePath());
+  // QSaveFile writes to a temporary file and atomically replaces the target on
+  // commit(), creating it if it does not exist yet.
+  QSaveFile fileToSave(filePath);
 
   // note this mode implies Truncate also
   if (!fileToSave.open(QIODevice::WriteOnly)) {
-    file->close();
-    delete file;
+    qWarning() << "Could not open tasks file for writing:" << filePath << "-"
+               << fileToSave.errorString();
     return false;
   }
 
@@ -146,12 +167,15 @@ bool ListOfJobOptions::PersistToUserData() {
     outstream << *it;
   }
 
-  file->close();
-  delete file;
+  if (!fileToSave.commit()) {
+    qWarning() << "Could not save tasks file:" << filePath << "-"
+               << fileToSave.errorString();
+    return false;
+  }
 
   emit tasksListUpdated();
 
-  return fileToSave.commit();
+  return true;
 }
 
 QDataStream &operator<<(QDataStream &stream, JobOptions &jo) {
