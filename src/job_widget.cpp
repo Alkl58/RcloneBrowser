@@ -1,6 +1,27 @@
 #include "job_widget.h"
 #include "utils.h"
 
+namespace {
+QString NormalizeRcloneStatsLine(const QString &line) {
+  static const QStringList prefixes = {"Transferred:", "Errors:", "Checks:",
+                                       "Elapsed time:", "Transferring:", "* "};
+  qsizetype statsStart = -1;
+
+  for (const auto &prefix : prefixes) {
+    const qsizetype index = line.indexOf(prefix);
+    if (index >= 0 && (statsStart < 0 || index < statsStart)) {
+      statsStart = index;
+    }
+  }
+
+  if (statsStart > 0) {
+    return line.mid(statsStart).trimmed();
+  }
+
+  return line;
+}
+} // namespace
+
 JobWidget::JobWidget(QProcess *process, const QString &info,
                      const QStringList &args, const QString &source,
                      const QString &dest, const QString &uniqueID,
@@ -138,7 +159,7 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
     QRegularExpression rxSize2(QRegularExpression::anchoredPattern(
         R"(Transferred:\s+([0-9.]+)(\S)? \/ (\S+) (\S+), ([0-9%-]+), (\S+ \S+), (\S+) (\S+))")); // Starting with rclone 1.43
     QRegularExpression rxSize3(QRegularExpression::anchoredPattern(
-        R"(Transferred:\s+([0-9.]+ \w+) \/ ([0-9.]+ \w+), ([0-9%-]+), ([0-9.]+ \w+\/s), \w+ (\S+))")); // Starting with rclone 1.57
+        R"(Transferred:\s+([0-9.]+\s*\S+)\s*\/\s*([0-9.]+\s*\S+),\s*([0-9.%-]+),\s*((?:[0-9.]+\s*\S+\/s)|-),\s*ETA\s+(\S+))")); // Starting with rclone 1.57
     QRegularExpression rxErrors(QRegularExpression::anchoredPattern(
         R"(Errors:\s+(\d+)(.*))")); // captures also following variant:
                                     // "Errors: 123 (bla bla bla)"
@@ -159,7 +180,7 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
     QRegularExpression rxProgress2(QRegularExpression::anchoredPattern(
         R"(\*([^:]+):\s*([^%]+)% \/[a-zA-z0-9.]+, [a-zA-z0-9.]+\/s, (\w+))")); // Starting with rclone 1.39
     QRegularExpression rxProgress3(QRegularExpression::anchoredPattern(
-        R"(\* ([^:]+):\s*([^%]+%) \/([0-9.]+\w+), ([0-9.]*[a-zA-Z\/]+s)*,)")); // Starting with rclone 1.56
+        R"(\*\s*(.+):\s*([0-9]+(?:\.[0-9]+)?)%\s*\/\s*([^,]+),\s*((?:[0-9.]+\s*\S+\/s)|-),\s*(\S+))")); // Starting with rclone 1.56
     while (mProcess->canReadLine()) {
       QString line = mProcess->readLine().trimmed();
       if (++mLines == 10000) {
@@ -186,8 +207,9 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
         continue;
       }
 
+      QString statsLine = NormalizeRcloneStatsLine(line);
       QRegularExpressionMatch m;
-      if ((m = rxSize.match(line)).hasMatch()) {
+      if ((m = rxSize.match(statsLine)).hasMatch()) {
         ui.size->setText(m.captured(1));
 
         ui.progress_info->setStyleSheet(
@@ -195,7 +217,7 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
         ui.progress_info->setText("(" + m.captured(1) + ")");
 
         ui.bandwidth->setText(m.captured(2));
-      } else if ((m = rxSize2.match(line)).hasMatch()) {
+      } else if ((m = rxSize2.match(statsLine)).hasMatch()) {
         ui.size->setText(m.captured(1) + " " + m.captured(2) + "B" + ", " +
                          m.captured(5));
         ui.bandwidth->setText(m.captured(6));
@@ -206,12 +228,16 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
             "QLabel { color: green; font-weight: bold;}");
         ui.progress_info->setText("(" + m.captured(5) + ")");
 
-      } else if ((m = rxSize3.match(line)).hasMatch()) {
+      } else if ((m = rxSize3.match(statsLine)).hasMatch()) {
         ui.size->setText(m.captured(1) + ", " + m.captured(3));
         ui.bandwidth->setText(m.captured(4));
         ui.eta->setText(m.captured(5));
         ui.totalsize->setText(m.captured(2));
-      } else if ((m = rxErrors.match(line)).hasMatch()) {
+
+        ui.progress_info->setStyleSheet(
+            "QLabel { color: green; font-weight: bold;}");
+        ui.progress_info->setText("(" + m.captured(3) + ")");
+      } else if ((m = rxErrors.match(statsLine)).hasMatch()) {
         ui.errors->setText(m.captured(1));
 
         if (!(m.captured(1).toInt() == 0)) {
@@ -220,128 +246,31 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
           ui.errors->setStyleSheet(
               "QLineEdit { color: red; font-weight: normal;}");
         }
-      } else if ((m = rxChecks.match(line)).hasMatch()) {
+      } else if ((m = rxChecks.match(statsLine)).hasMatch()) {
         ui.checks->setText(m.captured(1));
-      } else if ((m = rxChecks2.match(line)).hasMatch()) {
+      } else if ((m = rxChecks2.match(statsLine)).hasMatch()) {
         ui.checks->setText(m.captured(1) + " / " + m.captured(2) + ", " +
                            m.captured(3));
-      } else if ((m = rxTransferred.match(line)).hasMatch()) {
+      } else if ((m = rxTransferred.match(statsLine)).hasMatch()) {
         ui.transferred->setText(m.captured(1));
-      } else if ((m = rxTransferred2.match(line)).hasMatch()) {
+      } else if ((m = rxTransferred2.match(statsLine)).hasMatch()) {
         ui.transferred->setText(m.captured(1) + " / " + m.captured(2) + ", " +
                                 m.captured(3));
-      } else if ((m = rxTime.match(line)).hasMatch()) {
+      } else if ((m = rxTime.match(statsLine)).hasMatch()) {
         ui.elapsed->setText(m.captured(1));
-      } else if ((m = rxProgress.match(line)).hasMatch()) {
+      } else if ((m = rxProgress.match(statsLine)).hasMatch()) {
         QString name = m.captured(1).trimmed();
-
-        auto it = mActive.find(name);
-
-        QLabel *label;
-        QProgressBar *bar;
-        if (it == mActive.end()) {
-          label = new QLabel();
-          label->setText(name);
-
-          bar = new QProgressBar();
-          bar->setMinimum(0);
-          bar->setMaximum(100);
-          bar->setTextVisible(true);
-
-          label->setBuddy(bar);
-
-          ui.progress->addRow(label, bar);
-
-          mActive.insert(name, label);
-        } else {
-          label = it.value();
-          bar = static_cast<QProgressBar *>(label->buddy());
-        }
-
-        bar->setValue(m.captured(2).toInt());
-        bar->setToolTip(m.captured(3));
-
-        mUpdated.insert(label);
-      } else if ((m = rxProgress2.match(line)).hasMatch()) {
+        updateProgress(name, m.captured(2).toInt(), m.captured(3));
+      } else if ((m = rxProgress2.match(statsLine)).hasMatch()) {
         QString name = m.captured(1).trimmed();
-
-        auto it = mActive.find(name);
-
-        QLabel *label;
-        QProgressBar *bar;
-        if (it == mActive.end()) {
-          label = new QLabel();
-
-          QString nameTrimmed;
-
-          if (name.length() > 47) {
-            nameTrimmed = name.left(25) + "..." + name.right(19);
-          } else {
-            nameTrimmed = name;
-          }
-
-          label->setText(nameTrimmed);
-
-          bar = new QProgressBar();
-          bar->setMinimum(0);
-          bar->setMaximum(100);
-          bar->setTextVisible(true);
-
-          label->setBuddy(bar);
-
-          ui.progress->addRow(label, bar);
-
-          mActive.insert(name, label);
-        } else {
-          label = it.value();
-          bar = static_cast<QProgressBar *>(label->buddy());
-        }
-
-        bar->setValue(m.captured(2).toInt());
-        bar->setToolTip("File name: " + name + "\nFile stats" +
-                        m.captured(0).mid(m.captured(0).indexOf(':')));
-
-        mUpdated.insert(label);
-      } else if ((m = rxProgress3.match(line)).hasMatch()) {
+        updateProgress(name, m.captured(2).toInt(),
+                       "File name: " + name + "\nFile stats" +
+                           m.captured(0).mid(m.captured(0).indexOf(':')));
+      } else if ((m = rxProgress3.match(statsLine)).hasMatch()) {
         QString name = m.captured(1).trimmed();
-
-        auto it = mActive.find(name);
-
-        QLabel *label;
-        QProgressBar *bar;
-        if (it == mActive.end()) {
-          label = new QLabel();
-
-          QString nameTrimmed;
-
-          if (name.length() > 47) {
-            nameTrimmed = name.left(25) + "..." + name.right(19);
-          } else {
-            nameTrimmed = name;
-          }
-
-          label->setText(nameTrimmed);
-
-          bar = new QProgressBar();
-          bar->setMinimum(0);
-          bar->setMaximum(100);
-          bar->setTextVisible(true);
-
-          label->setBuddy(bar);
-
-          ui.progress->addRow(label, bar);
-
-          mActive.insert(name, label);
-        } else {
-          label = it.value();
-          bar = static_cast<QProgressBar *>(label->buddy());
-        }
-
-        bar->setValue(m.captured(2).toInt());
-        bar->setToolTip("File name: " + name + "\nFile stats" +
-                        m.captured(0).mid(m.captured(0).indexOf(':')));
-
-        mUpdated.insert(label);
+        updateProgress(name, qRound(m.captured(2).toDouble()),
+                       "File name: " + name + "\nFile stats" +
+                           m.captured(0).mid(m.captured(0).indexOf(':')));
       }
     }
   });
@@ -402,6 +331,46 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
 JobWidget::~JobWidget() {}
 
 void JobWidget::showDetails() { ui.showDetails->setChecked(true); }
+
+void JobWidget::updateProgress(const QString &name, int value,
+                               const QString &toolTip) {
+  auto it = mActive.find(name);
+
+  QLabel *label;
+  QProgressBar *bar;
+  if (it == mActive.end()) {
+    label = new QLabel();
+
+    QString nameTrimmed;
+
+    if (name.length() > 47) {
+      nameTrimmed = name.left(25) + "..." + name.right(19);
+    } else {
+      nameTrimmed = name;
+    }
+
+    label->setText(nameTrimmed);
+
+    bar = new QProgressBar();
+    bar->setMinimum(0);
+    bar->setMaximum(100);
+    bar->setTextVisible(true);
+
+    label->setBuddy(bar);
+
+    ui.progress->addRow(label, bar);
+
+    mActive.insert(name, label);
+  } else {
+    label = it.value();
+    bar = static_cast<QProgressBar *>(label->buddy());
+  }
+
+  bar->setValue(value);
+  bar->setToolTip(toolTip);
+
+  mUpdated.insert(label);
+}
 
 void JobWidget::cancel() {
   if (!isRunning) {

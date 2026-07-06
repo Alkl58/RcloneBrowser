@@ -48,5 +48,6 @@ private:
 
   QDateTime mStartDateTime = QDateTime::currentDateTime();
   QDateTime mFinishDateTime;
+  void updateProgress(const QString &name, int value, const QString &toolTip);
   void updateStartFinishInfo();
 };
