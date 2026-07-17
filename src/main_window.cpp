@@ -1998,12 +1998,21 @@ MainWindow::MainWindow() {
   ui.tabs->tabBar()->setTabButton(4, QTabBar::RightSide, nullptr);
   ui.tabs->tabBar()->setTabButton(4, QTabBar::LeftSide, nullptr);
 
+  // Drop the Tasks, Queue and Scheduler tabs: this build no longer supports
+  // saving/naming tasks, queueing them, or the task scheduler, so only the
+  // Remotes and Jobs tabs remain. Remove from the highest index first so the
+  // lower indices stay valid. The backing widgets still exist (they are just
+  // detached from the tab bar), so the rest of the code that references them
+  // keeps compiling and never crashes.
+  ui.tabs->removeTab(4); // Scheduler
+  ui.tabs->removeTab(3); // Queue
+  ui.tabs->removeTab(2); // Tasks
+
   ui.tabs->setCurrentIndex(0);
 
   {
-    restoreSchedulersFromFile();
-    listTasks();
-    addTasksToQueue();
+    // Nothing to restore: schedulers, saved tasks and the queue are
+    // intentionally not loaded so nothing runs in the background.
   }
 
   if (!(settings->value("Settings/schedulerStatus").toBool())) {

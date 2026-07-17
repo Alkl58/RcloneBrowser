@@ -181,6 +181,14 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
         R"(\*([^:]+):\s*([^%]+)% \/[a-zA-z0-9.]+, [a-zA-z0-9.]+\/s, (\w+))")); // Starting with rclone 1.39
     QRegularExpression rxProgress3(QRegularExpression::anchoredPattern(
         R"(\*\s*(.+):\s*([0-9]+(?:\.[0-9]+)?)%\s*\/\s*([^,]+),\s*((?:[0-9.]+\s*\S+\/s)|-),\s*(\S+))")); // Starting with rclone 1.56
+    // Version-agnostic overall percentage grabbed from the byte summary line
+    // ("Transferred: X / Y, NN%, <speed>/s, ETA ..."). Kept deliberately loose
+    // and NOT anchored so it still fires when the strict rxSize* patterns above
+    // fail to match a given rclone build. The trailing "/s" ties it to the
+    // byte/speed summary line so it never picks up the object-count line
+    // ("Transferred: N / M, NN%"). This is what stops the always-visible header
+    // from sitting at "(0%)" until the detailed output is expanded.
+    QRegularExpression rxOverallPct(R"(Transferred:.*,\s*(\d+)%,.*/s)");
     while (mProcess->canReadLine()) {
       QString line = mProcess->readLine().trimmed();
       if (++mLines == 10000) {
@@ -208,6 +216,16 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
       }
 
       QString statsLine = NormalizeRcloneStatsLine(line);
+
+      // Always refresh the header percentage from the byte summary line, even
+      // when none of the version-specific rxSize* branches below match it.
+      QRegularExpressionMatch mPct = rxOverallPct.match(statsLine);
+      if (mPct.hasMatch()) {
+        ui.progress_info->setStyleSheet(
+            "QLabel { color: green; font-weight: bold;}");
+        ui.progress_info->setText("(" + mPct.captured(1) + "%)");
+      }
+
       QRegularExpressionMatch m;
       if ((m = rxSize.match(statsLine)).hasMatch()) {
         ui.size->setText(m.captured(1));
