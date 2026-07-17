@@ -796,6 +796,19 @@ TransferDialog::TransferDialog(bool isDownload, bool isDrop,
   }
 
   QTimer::singleShot(500, Qt::CoarseTimer, this, SLOT(showToolTip()));
+
+  // Task saving/naming has been removed: this dialog only runs transfers.
+  // Hide the "Save as a task" group and the Save task button, and force the
+  // task controls off so TransferDialog::done() always takes the plain run
+  // path and never persists a task (regardless of any leftover
+  // transferAutoName setting). "Run" and "Dry run" remain.
+  ui.groupBox_3->hide();
+  ui.cb_taskAutoName->setChecked(false);
+  ui.cb_taskAddToQueue->setChecked(false);
+  ui.le_taskName->clear();
+  saveTask->hide();
+  run->setText("&Run");
+  dryRun->setText("Dry run");
 }
 
 TransferDialog::~TransferDialog() {
