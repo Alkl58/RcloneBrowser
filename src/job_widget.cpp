@@ -168,6 +168,9 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
     QRegularExpression rxChecks2(QRegularExpression::anchoredPattern(
         R"(Checks:\s+(\S+) \/ (\S+), ([0-9%-]+))"));   // Starting with
                                                        // rclone 1.43
+    QRegularExpression rxChecks3(QRegularExpression::anchoredPattern(
+    R"(Checks:\s+(\S+) \/ (\S+), ([0-9%-]+), Listed (\S+))")); // Starting with
+                                                                // rclone 1.70
     QRegularExpression rxTransferred(QRegularExpression::anchoredPattern(
         R"(Transferred:\s+(\S+))")); // Until rclone 1.42
     QRegularExpression rxTransferred2(QRegularExpression::anchoredPattern(
@@ -251,6 +254,9 @@ JobWidget::JobWidget(QProcess *process, const QString &info,
       } else if ((m = rxChecks2.match(statsLine)).hasMatch()) {
         ui.checks->setText(m.captured(1) + " / " + m.captured(2) + ", " +
                            m.captured(3));
+      } else if ((m = rxChecks3.match(statsLine)).hasMatch()) {
+        ui.checks->setText(m.captured(1) + " / " + m.captured(2) + ", " +
+                           m.captured(3) + ", Listed " + m.captured(4));
       } else if ((m = rxTransferred.match(statsLine)).hasMatch()) {
         ui.transferred->setText(m.captured(1));
       } else if ((m = rxTransferred2.match(statsLine)).hasMatch()) {
