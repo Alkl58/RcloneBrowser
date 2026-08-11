@@ -72,26 +72,76 @@ jobs:
           path: build\build\Release\*
           
   build_linux:
-    name: Linux Build
-    runs-on: ubuntu-latest
-    
+    name: Linux Build (AppImage)
+    # Build on an older LTS than the Qt 6 minimum requires to keep the
+    # resulting AppImage's glibc/libstdc++ dependency as low as practical.
+    # ubuntu-22.04 is the oldest GitHub-hosted image that still satisfies
+    # Qt 6.10's toolchain requirements.
+    runs-on: ubuntu-22.04
+
     steps:
       - uses: actions/checkout@v4
-      - name: Install Development Tools
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          host: 'linux'
+          target: 'desktop'
+          arch: 'linux_gcc_64'
+          modules: 'qtmultimedia'
+
+      - name: Install build and runtime dependencies
         run: |
           sudo apt update
-          sudo apt -y install git g++ cmake make qt6-base-dev qt6-multimedia-dev libgl1-mesa-dev
+          sudo apt -y install \
+            build-essential cmake file patchelf \
+            libgl1-mesa-dev \
+            libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 \
+            libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-shape0 \
+            libxcb-xinerama0 libxcb-xkb1
+
+      - name: Download linuxdeploy AppImage tools
+        run: |
+          mkdir -p "$HOME/linuxdeploy"
+          curl -L -o "$HOME/linuxdeploy/linuxdeploy-x86_64.AppImage" \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -L -o "$HOME/linuxdeploy/linuxdeploy-plugin-qt-x86_64.AppImage" \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          curl -L -o "$HOME/linuxdeploy/linuxdeploy-plugin-appimage-x86_64.AppImage" \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
+          chmod +x "$HOME/linuxdeploy/"*.AppImage
+          echo "$HOME/linuxdeploy" >> "$GITHUB_PATH"
+
       - name: Build Rclone Browser
         run: |
           mkdir build
           cd build
-          cmake ..
-          make -j $(nproc)
-          
+          cmake .. -DCMAKE_PREFIX_PATH="$QT_ROOT_DIR" -DCMAKE_INSTALL_PREFIX=/usr
+          make --jobs="$(nproc)"
+          make install DESTDIR="$GITHUB_WORKSPACE/AppDir"
+
+      - name: Build AppImage
+        env:
+          # No FUSE inside the GitHub Actions container - extract and run instead.
+          APPIMAGE_EXTRACT_AND_RUN: '1'
+        run: |
+          VERSION="$(cat VERSION)-$(git rev-parse --short HEAD)"
+          export VERSION
+
+          linuxdeploy \
+            --appdir AppDir \
+            --desktop-file=AppDir/usr/share/applications/rclone-browser.desktop \
+            --plugin qt \
+            --output appimage
+
+          mkdir -p build/build
+          mv ./*.AppImage "build/build/rclone-browser-${VERSION}-linux-x86_64.AppImage"
+
       - uses: actions/upload-artifact@v4
         with:
          name: linux
-         path: build/build/*
+         path: build/build/*.AppImage
          
   build_macos:
     name: macOS Build (Apple Silicon)
