@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - master
-      
+       
   workflow_dispatch:
 
 env:
@@ -17,7 +17,7 @@ jobs:
     runs-on: windows-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -35,7 +35,7 @@ jobs:
           cmake -A x64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" ..
           cmake --build . --config Release
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --no-translations --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows
           path: build\build\Release\*
@@ -48,7 +48,7 @@ jobs:
     runs-on: windows-11-arm
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Qt (ARM64)
         uses: jurplel/install-qt-action@v4
         with:
@@ -66,7 +66,7 @@ jobs:
           cmake -A ARM64 -DCMAKE_CONFIGURATION_TYPES="Release" -DCMAKE_PREFIX_PATH="$env:QT_ROOT_DIR" ..
           cmake --build . --config Release
           & "$env:QT_ROOT_DIR\bin\windeployqt.exe" --no-translations --no-compiler-runtime --no-svg ".\build\Release\RcloneBrowser.exe"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: windows-arm64
           path: build\build\Release\*
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -141,7 +141,7 @@ jobs:
           mkdir -p build/build
           mv ./*.AppImage "build/build/rclone-browser-${VERSION}-linux-x86_64.AppImage"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
          name: linux
          path: build/build/*.AppImage
@@ -151,7 +151,7 @@ jobs:
     runs-on: macos-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
@@ -170,7 +170,7 @@ jobs:
           cd build
           "$QT_ROOT_DIR/bin/macdeployqt" rclone-browser.app -executable="rclone-browser.app/Contents/MacOS/rclone-browser"
           mv rclone-browser.app Rclone\ Browser.app
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: macos
           path: build/build/*
@@ -180,7 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Development Tools and Build Rclone Browser
         uses: vmactions/freebsd-vm@v1
         with:
@@ -195,7 +195,7 @@ jobs:
             cmake ..
             make
             
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: freebsd
           path: build/build/*
@@ -206,10 +206,10 @@ jobs:
     needs: [build_windows, build_windows_arm64, build_linux, build_macos, build_freebsd]
     
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Create artifact directory
         run: rm -rf /tmp/artifacts && mkdir /tmp/artifacts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: /tmp/artifacts
       - name: Compress artifacts

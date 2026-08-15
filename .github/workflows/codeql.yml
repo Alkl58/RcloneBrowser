@@ -1,0 +1,55 @@
+name: "CodeQL"
+
+on:
+  # push:
+  #   branches: [ "master" ]
+  # pull_request:
+  #   branches: [ "master" ]
+  # schedule:
+  #   # einmal wöchentlich, unabhängig von Pushes/PRs (findet neue Advisories
+  #   # für bereits vorhandene Codepfade, ohne dass sich der Code ändert)
+  #   - cron: "23 4 * * 1"
+  workflow_dispatch: {}
+    # ermöglicht manuellen Start über Actions-Tab -> "Run workflow",
+    # unabhängig davon ob schedule/cron aktiv ist oder auskommentiert wurde
+
+jobs:
+  analyze:
+    name: Analyze (cpp)
+    runs-on: ubuntu-latest
+    permissions:
+      # Für das Hochladen der Ergebnisse in den "Security" Tab benötigt
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install build dependencies
+        run: |
+          sudo apt update
+          sudo apt -y install git g++ cmake make qt6-base-dev qt6-multimedia-dev libgl1-mesa-dev
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: cpp
+          # manueller Build-Mode: CodeQL beobachtet passiv den Build-Prozess
+          # unten (Tracing), statt selbst zu raten, wie CMake+Qt6 zu bauen ist
+          build-mode: manual
+          # queries: security-extended   # optional: mehr Checks, mehr False Positives
+          # queries: security-and-quality  # optional: noch mehr Checks, mehr False Positives
+
+      - name: Build (CMake, Debian/Ubuntu path)
+        run: |
+          mkdir build && cd build
+          cmake ..
+          make -j"$(nproc)"
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: "/language:cpp"
